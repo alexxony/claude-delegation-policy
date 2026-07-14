@@ -27,7 +27,8 @@ MSG_BASH = (
     "실행/빌드/테스트성 명령은 Sonnet 서브에이전트에 위임하는 것이 원칙. "
     "단발 확인용이면 진행해도 되지만, 실행→분석→수정 루프가 예상되면 지금 "
     "oh-my-claudecode:executor 또는 general-purpose(model: sonnet)로 루프 전체를 위임할 것. "
-    "위임 시 Agent spawn에 model=sonnet을 명시할 것."
+    "위임 시 Agent spawn에 model=sonnet을 명시할 것. 장기 백그라운드/원격 작업이면 "
+    "점검 전담 monitor 에이전트도 함께 spawn해 오케스트레이터 직접 폴링을 피할 것."
 )
 MSG_FILE = (
     "⚠️ 위임 원칙 리마인더 (메인 세션 Fable 대상 — 서브에이전트는 무시하고 계속 진행): "
@@ -36,7 +37,8 @@ MSG_FILE = (
     "general-purpose(model: sonnet)로 전환할 것. 위임 시 Agent spawn에 model=sonnet을 명시할 것."
 )
 MSG_AGENT_NO_MODEL = (
-    "⚠️ 위임 원칙 리마인더 (메인 세션 Fable 대상 — 서브에이전트는 무시하고 계속 진행): "
+    "⚠️ 위임 원칙 리마인더 (메인 세션 Fable 대상 — 서브에이전트는 무시하고 계속 진행. "
+    "executor 등 서브에이전트는 재위임 금지, 직접 실행할 것): "
     "Agent spawn에 model이 명시되지 않음. 기본값은 sonnet. "
     "opus는 아키텍처 설계·고난도 구현 등 명확한 예외에만 쓰고, 그 경우 프롬프트에 사유를 한 줄 남길 것."
 )
@@ -44,6 +46,12 @@ MSG_AGENT_OPUS = (
     "⚠️ 위임 원칙 리마인더 (메인 세션 Fable 대상 — 서브에이전트는 무시하고 계속 진행): "
     "Agent spawn에 model=opus 선택됨. 아키텍처·고난도 구현 등 진짜 예외인지 확인, "
     "아니면 sonnet으로 낮출 것."
+)
+MSG_SCHEDULE_WAKEUP = (
+    "⚠️ 위임 원칙 리마인더 (메인 세션 Fable 대상 — 서브에이전트는 무시하고 계속 진행): "
+    "폴링용 wakeup인가? 백그라운드/원격 작업 대기는 오케스트레이터가 직접 폴링하지 말고 "
+    "점검 전담 monitor 에이전트(sonnet)에 위임하고, 이 wakeup은 monitor 자체가 죽었을 때 대비한 "
+    "장주기(30분+) 최후 안전망으로만 남길 것."
 )
 
 
@@ -87,6 +95,8 @@ def main() -> None:
             message, kind = MSG_AGENT_NO_MODEL, "agent_no_model"
         elif model == "opus":
             message, kind = MSG_AGENT_OPUS, "agent_opus"
+    elif tool == "ScheduleWakeup":
+        message, kind = MSG_SCHEDULE_WAKEUP, "schedule_wakeup"
 
     if message and not throttled(session, kind):
         print(json.dumps({
