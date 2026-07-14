@@ -1,0 +1,5 @@
+/mnt/c/ObsidianVault
+/mnt/c/ObsidianVault/Compiler_Thermal
+/home/kimsh/workspace/compiler_thermal
+/home/kimsh/workspace/hbm_build
+/home/kimsh/workspace/gpu_solver_test
