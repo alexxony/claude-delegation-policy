@@ -4,6 +4,12 @@
 
 Claude Code 세션에서 "Fable(메인 세션)은 오케스트레이션·검증 전담, 구현은 Sonnet 서브에이전트 위임" 원칙을 훅 기반으로 강제하기 위한 자산 모음이다. 특정 프로젝트에 종속되지 않는 독립 저장소로 분리해, 여러 프로젝트(Obsidian vault, Compiler_Thermal, compiler_thermal, hbm_build, gpu_solver_test 등)에서 동일한 정책을 공유한다.
 
+## 문서 (`docs/`)
+
+- [orchestration-cost-model.md](docs/orchestration-cost-model.md) — 오케스트레이션 비용 모델·spawn 표준·모델 판별 테스트
+- [incident-casebook.md](docs/incident-casebook.md) — 사고 사례집(조용한 오판 A형 / 통신·생존 B형 / 기록 C형, 증상→경로→계기→비용→규칙)
+- [verification-gates.md](docs/verification-gates.md) — 사례에서 도출한 검증 게이트 원칙(G1~G6 + 미해결 과제)
+
 ## 구조 — 2중 강제 장치
 
 위임 원칙 위반을 막는 장치는 두 층으로 구성된다.
