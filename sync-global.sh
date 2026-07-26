@@ -70,6 +70,18 @@ deploy_hooks_windows() {
     echo "linked (Windows): $claude_dir/hooks/{orch-rule-injector.py,delegation-reminder.py}"
 }
 
+deploy_hooks_vault() {
+    local claude_dir="/mnt/c/ObsidianVault/.claude"
+    if [ ! -d "$claude_dir" ]; then
+        echo "skip (missing dir): $claude_dir"
+        return
+    fi
+    mkdir -p "$claude_dir/hooks"
+    ln -sf "$SCRIPT_DIR/hooks/orch-rule-injector.py" "$claude_dir/hooks/orch-rule-injector.py"
+    ln -sf "$SCRIPT_DIR/hooks/delegation-reminder.py" "$claude_dir/hooks/delegation-reminder.py"
+    echo "linked (Vault): $claude_dir/hooks/{orch-rule-injector.py,delegation-reminder.py}"
+}
+
 register_settings() {
     local settings="$1"
     local hooks_dir="$2"
@@ -127,5 +139,7 @@ EOF
 
 deploy_hooks_wsl
 deploy_hooks_windows
+deploy_hooks_vault
 register_settings "$HOME/.claude/settings.json" "$HOME/.claude/hooks"
 register_settings "/mnt/c/Users/LG-PC/.claude/settings.json" "/mnt/c/Users/LG-PC/.claude/hooks"
+register_settings "/mnt/c/ObsidianVault/.claude/settings.local.json" "/mnt/c/ObsidianVault/.claude/hooks"
