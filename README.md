@@ -110,3 +110,38 @@ PreToolUse 훅은 메인 세션의 툴콜뿐 아니라 **서브에이전트의 �
   }
 }
 ```
+
+## 플랫폼 주의 — 네이티브 Windows Claude Code에서 훅 등록 시
+
+이 레포의 훅(`orch-rule-injector.py`, `delegation-reminder.py`)은 **WSL 네이티브**를 전제로 한다:
+`realpath(__file__)`로 심링크를 풀어 `../rules/`를 찾고, `python3`·inotify(ext4)에 의존한다.
+WSL 안에서 도는 Claude Code라면 위 예시(`python3 ~/.claude/hooks/…`)대로 동작한다.
+
+그러나 **네이티브 Windows 빌드의 Claude Code**(`platform win32`, 훅을 Git Bash/MSYS로 실행)에
+아래처럼 등록하면 조용히 혹은 전면적으로 깨진다:
+
+    "command": "python3 \"/mnt/c/Users/<you>/.claude/hooks/orch-rule-injector.py\""
+
+깨지는 이유 3가지:
+
+1. **경로 뭉개짐** — MSYS가 `/mnt/c/…`를 `C:\Program Files\Git\mnt\c\…`로 변환해 파일을 못 찾음.
+2. **python3 셰임** — Windows의 `python3`가 pyenv 셰임이면 버전 미설정 상태에서 무출력/실패(실제 인터프리터는 보통 `python`).
+3. **깨진 심링크** — `~/.claude/hooks/*.py`가 `/home/<you>/…`를 가리키는 WSL 심링크라 Windows에선 dangling.
+
+특히 이게 **PreToolUse 훅**이면 실패 시(exit≠0) **모든 도구 호출이 차단**된다 — 세션이 사실상 마비된다.
+
+### 해결 — WSL를 경유해 원본을 실행
+
+    "command": "MSYS_NO_PATHCONV=1 wsl -- bash -lc \"python3 /home/<you>/workspace/claude-delegation-policy/hooks/orch-rule-injector.py\""
+
+- `MSYS_NO_PATHCONV=1` — Git Bash의 인자 경로 자동변환을 끔.
+- `wsl -- bash -lc` — WSL 안에서 로그인 셸로 실행 → 심링크·경로 정상, `~/.profile`의 `ORCH_RULE` 토글도 반영.
+
+### 비용 주의
+
+`wsl` 경유는 호출마다 WSL 프로세스를 띄운다. **SessionStart 훅**(세션당 1회)엔 무시할 만하지만,
+**PreToolUse 훅**(도구 호출마다)은 매번 오버헤드가 붙는다. 고빈도 훅(`delegation-reminder`)은
+Windows 세션에서 WSL 경유로 되살리기보다 **WSL Claude Code 세션에서 네이티브로 쓰거나, Windows
+쪽은 no-op(`:`)으로 두는 편**이 낫다.
+
+> 사건 전말: [docs/incident-casebook.md](docs/incident-casebook.md) C8.

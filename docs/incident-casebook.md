@@ -65,6 +65,14 @@
 - **대응**: 디스크 선검증(git log·산출물 판독)으로 실제 진척 확인 → 마무리 지시 1회로 회수. 데이터 손실 0, 복구 수 분.
 - **도출 규칙**: ① idle 알림 수신 시 "보고 왔나?"가 아니라 "디스크에 뭐가 있나?"부터. ② 위임 프롬프트에 완료 조건(테스트 숫자·커밋·보고 4항)을 명시해도 미준수 발생 — 회수 절차(디스크 검증→마무리 지시)를 표준으로 유지. 근본 해결(보고 강제 장치)은 미해결 과제.
 
+### C8. WSL용 훅이 Windows 네이티브 세션에서 전 도구 차단 (Obsidian vault, 2026-07-26)
+
+- **증상**: 네이티브 Windows Claude Code(ObsidianVault) 세션에서 **모든 도구 호출이 PreToolUse 훅 에러로 차단** — `python3: can't open file 'C:\Program Files\Git\mnt\c\…\delegation-reminder.py'`. Read/Grep/Bash 전부 불가로 세션 마비.
+- **원인**: `~/.claude/settings.json`·`.claude/settings.local.json`의 훅이 `python3 "/mnt/c/…/hook.py"` 형태(WSL 전제)였는데 이 세션은 Windows 빌드라 3중 실패 — (a) MSYS가 `/mnt/c/`를 `C:\Program Files\Git\mnt\c\`로 뭉갬, (b) `python3`가 pyenv 셰임(무출력/실패), (c) `.claude/hooks/*.py`가 `/home/kimsh/…` WSL 심링크라 dangling. PreToolUse exit≠0가 tool 차단으로 직결.
+- **발각·해결**: 훅 command를 `!`(세션 셸, 훅 우회)로 grep해 원흉 2파일 특정 → 차단 훅은 `:`(no-op)로 무력화해 도구 회복 → 유지가 필요한 SessionStart 훅(orch-rule-injector)만 `MSYS_NO_PATHCONV=1 wsl -- bash -lc "python3 /home/…/hook.py"`로 교정(토글 off라 평상시 무동작). 부수 발견: 같은 스크립트를 **시스템+유저 systemd 서비스 2개**가 중복 감시(inotifywait 2개) — "고아 두더지잡기"의 정체였고, 유저 서비스 disable+삭제로 단일화.
+- **비용**: 세션 전 도구 마비 상태에서 원인 추적(훅 우회 grep→settings 특정)에 다수 왕복. 데이터 손실 0(설정 수리, .bak 백업 후 복구).
+- **도출 규칙**: ① **플랫폼 교차 훅 금지** — `/mnt/c/`·WSL 심링크·`python3` 셰임에 의존하는 훅을 네이티브 Windows 세션에 등록하지 말 것. 교차 실행이 필요하면 `MSYS_NO_PATHCONV=1 wsl -- bash -lc` 경유(README §플랫폼 주의). ② **PreToolUse 훅은 실패해도 tool을 막지 않게** — 스크립트가 어떤 이유로든 안 열려도 exit 0 보장(가드/`|| :`). ③ 상태 감시 서비스는 **시스템/유저 systemd 중 하나로 단일화** — 이중 등록 시 "죽여도 되살아나는 고아"로 오인됨. 이 사건은 머신 로컬 설정 수리라 커밋 없음.
+
 ---
 
 ## C형 — 기록 사고 (종결)
