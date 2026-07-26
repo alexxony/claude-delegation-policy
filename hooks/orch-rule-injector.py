@@ -16,7 +16,7 @@ import os
 import sys
 
 RULE_FILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "..", "rules", "global-orchestration-rule.md"
+    os.path.dirname(os.path.realpath(__file__)), "..", "rules", "global-orchestration-rule.md"
 )
 
 
