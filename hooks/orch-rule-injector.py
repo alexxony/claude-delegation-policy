@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """SessionStart hook: 오케스트레이션 룰 본문을 세션 컨텍스트에 동적 주입.
 
-ORCH_RULE 환경변수로 on/off 토글한다 (unset이면 on, 기존 동작 유지):
-  - ORCH_RULE=off        -> 아무 것도 출력하지 않음 (룰 비활성)
-  - ORCH_RULE=on / unset -> rules/global-orchestration-rule.md 본문을 stdout에 출력
+ORCH_RULE 환경변수로 on/off 토글한다 (unset이면 off, 기본 비활성):
+  - ORCH_RULE=on         -> rules/global-orchestration-rule.md 본문을 stdout에 출력
+  - ORCH_RULE=off / unset -> 아무 것도 출력하지 않음 (룰 비활성)
 
 기존 CLAUDE.md 정적 주입(<fable_orchestration_rule> 블록) 방식은 폐기.
 모델은 쉘 환경변수를 볼 수 없으므로 조건문 텍스트를 CLAUDE.md에 박아두는 방식은
@@ -21,7 +21,7 @@ RULE_FILE = os.path.join(
 
 
 def main() -> None:
-    if os.environ.get("ORCH_RULE", "on") == "off":
+    if os.environ.get("ORCH_RULE", "off") != "on":
         return
 
     try:
