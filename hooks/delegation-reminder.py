@@ -80,6 +80,10 @@ def throttled(session_id: str, kind: str) -> bool:
 
 
 def main() -> None:
+    if os.environ.get("ORCH_RULE", "on") == "off":
+        print("{}")
+        return
+
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
