@@ -1,6 +1,6 @@
 ---
 name: delegate-heavy-bash
-enabled: true
+enabled: false
 event: bash
 action: warn
 tool_matcher: Bash

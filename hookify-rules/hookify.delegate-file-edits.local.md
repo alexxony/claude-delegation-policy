@@ -1,6 +1,6 @@
 ---
 name: delegate-file-edits
-enabled: true
+enabled: false
 event: file
 action: warn
 tool_matcher: Edit|Write|MultiEdit

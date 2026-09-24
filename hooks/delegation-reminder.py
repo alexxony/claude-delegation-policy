@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PreToolUse hook: 위임 원칙 리마인더를 모델 컨텍스트에 직접 주입.
 
-hookify warn(systemMessage)은 사용자 터미널에만 보이므로, 모델(Fable)에게
+hookify warn(systemMessage)은 사용자 터미널에만 보이므로, 모델(main)에게
 보이는 additionalContext 채널로 같은 리마인더를 주입한다.
 세션당 룰별 5분 스로틀로 토큰 비용을 제한한다.
 """
@@ -27,7 +27,7 @@ FILE_PATTERN = re.compile(
 # 툴콜에도 동일하게 발동해 "위임하라"는 지시를 그대로 따라 재위임을 시도한 것이 원인.
 # 그래서 "1단계 위임만" 원칙을 헤더에 명시적으로 박아 넣는다.
 HEADER = (
-    "⚠️ 위임 원칙 리마인더 — 이 리마인더는 메인 오케스트레이터(Fable) 전용이다. "
+    "⚠️ 위임 원칙 리마인더 — 이 리마인더는 main 세션 전용이다. "
     "서브에이전트/executor는 이 리마인더를 무시하고 맡은 작업을 직접 실행하라. "
     "위임은 1단계만 허용 — executor가 다시 executor를 spawn하는 재위임 금지."
 )
@@ -49,7 +49,7 @@ MSG_FILE = (
 MSG_AGENT_NO_MODEL = (
     f"{HEADER} "
     "Agent spawn에 model이 명시되지 않음. 기본값은 sonnet. "
-    "opus는 아키텍처 설계·고난도 구현 등 명확한 예외에만 쓰고, 그 경우 프롬프트에 사유를 한 줄 남길 것."
+    "opus/fable은 격상 사다리(advisor 조언 후에도 막힘, 비가역 결정 2차 의견) 해당 시에만 쓰고, 프롬프트에 사유를 한 줄 남길 것."
 )
 MSG_AGENT_OPUS = (
     f"{HEADER} "
@@ -96,17 +96,13 @@ def main() -> None:
 
     message = None
     kind = None
-    if tool == "Bash":
-        if BASH_PATTERN.search(tool_input.get("command", "")):
-            message, kind = MSG_BASH, "bash"
-    elif tool in ("Edit", "Write", "MultiEdit"):
-        if FILE_PATTERN.search(tool_input.get("file_path", "")):
-            message, kind = MSG_FILE, "file"
-    elif tool in ("Agent", "Task"):
+    # Bash/Edit 리마인더는 2026-09-24 폐기 — main이 Sonnet으로 바뀌어 직접 실행이 원칙.
+    # (MSG_BASH/MSG_FILE·패턴 상수는 롤백 대비 보존)
+    if tool in ("Agent", "Task"):
         model = tool_input.get("model") or ""
         if not model:
             message, kind = MSG_AGENT_NO_MODEL, "agent_no_model"
-        elif model == "opus":
+        elif model in ("opus", "fable"):
             message, kind = MSG_AGENT_OPUS, "agent_opus"
     elif tool == "ScheduleWakeup":
         message, kind = MSG_SCHEDULE_WAKEUP, "schedule_wakeup"
