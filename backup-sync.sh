@@ -4,9 +4,25 @@
 # 2) delegation-policy repo → /mnt/c/backup bare repo (WSL·Windows 물리 분리)
 # 수동 실행 또는 세션 마감 루틴에서 호출. GitHub 미사용(백업 전용).
 set -e
+# SessionEnd 훅에서 여러 세션이 동시에 끝날 수 있음 — 중복 실행 방지
+exec 9>/tmp/backup-sync.lock
+flock -n 9 || { echo "backup-sync 이미 실행 중, skip"; exit 0; }
+
+VAULT=/mnt/c/ObsidianVault
 rsync -a --delete \
   /home/kimsh/.claude/projects/-mnt-c-ObsidianVault/memory/ \
-  /mnt/c/ObsidianVault/_backup/claude-memory/
+  "$VAULT/_backup/claude-memory/"
+# 미러를 vault git에 기록해야 이력(삭제 복구)이 남음. _backup 경로만 커밋, push는 안 함.
+# 다른 세션이 vault git 사용 중(index.lock)이면 건드리지 않고 다음 기회로.
+if [ -e "$VAULT/.git/index.lock" ]; then
+  echo "warn: vault index.lock 존재 — 미러 커밋 skip"
+else
+  git -C "$VAULT" add -A -- _backup/claude-memory
+  if ! git -C "$VAULT" diff --cached --quiet -- _backup/claude-memory; then
+    git -C "$VAULT" commit --quiet -m "메모리 미러 자동 갱신 $(date '+%F %T')" -- _backup/claude-memory \
+      || echo "warn: vault 미러 커밋 실패"
+  fi
+fi
 git -C /home/kimsh/workspace/claude-delegation-policy push backup --all --quiet 2>/dev/null || \
   echo "warn: delegation-policy push 실패 (bare repo 확인 필요)"
 
