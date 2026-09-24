@@ -40,9 +40,9 @@
 
 ## G6. 기록 게이트 (종결된 계열의 유지 조건)
 
-- 2층 기록: 코드 repo JOURNAL.md 원장(이벤트 즉시 append+커밋, ISO 8601+tz) / vault PROGRESS.md 요약(페이즈 완결 시). (C7 이후 표준)
+- 기록 체계 정본은 vault CLAUDE.md '기록 체계'(2026-09-24): 실행 기록=코드 repo ledger `.jsonl` 러너 자동 append / 실패 진단=코드 repo JOURNAL.md(결론 한 줄+링크, 즉시 커밋) / 프로젝트 상태=vault `<폴더명>-STATE.md` ≤50줄 덮어쓰기. (구 2층 규약 "vault PROGRESS.md 요약"은 폐기 — 누적분을 매 세션 읽는 비용으로 사망)
 - 태스크 단위 원자 커밋 — 테스트 통과 즉시 커밋, 세션 말미 일괄 금지.
-- 세션 재개는 git log + JOURNAL tail이 정본 — 사용자 기억에 의존 금지.
+- 세션 재개는 git log + 해당 프로젝트 STATE(+필요 시 JOURNAL tail)가 정본 — 사용자 기억에 의존 금지.
 
 ## 미해결 과제
 

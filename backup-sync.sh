@@ -35,9 +35,20 @@ if [ -f "$REFLEXIO_DB" ]; then
   tmp=$(mktemp --suffix=.db)
   if python3 -c "import sqlite3,sys; s=sqlite3.connect(sys.argv[1]); d=sqlite3.connect(sys.argv[2]); s.backup(d); d.close(); s.close()" "$REFLEXIO_DB" "$tmp" \
      && python3 -c "import sqlite3,sys; r=sqlite3.connect(sys.argv[1]).execute('PRAGMA integrity_check').fetchone()[0]; sys.exit(r!='ok')" "$tmp"; then
-    cp "$tmp" "$REFLEXIO_DEST/reflexio-$(date +%F).db"
+    # 날짜만 쓰면 같은 날 스냅샷이 덮어써져 당일 중 삭제분 복구 불가(2026-09-24 s3-828 유실) → 시각 포함.
+    # 내용 동일하면 생략(서브에이전트 종료마다 훅이 돌아 중복 다수).
+    latest=$(ls -1 "$REFLEXIO_DEST"/reflexio-*.db 2>/dev/null | sort | tail -1)
+    if [ -z "$latest" ] || ! cmp -s "$tmp" "$latest"; then
+      cp "$tmp" "$REFLEXIO_DEST/reflexio-$(date +%F_%H%M%S).db"
+    fi
     cp /home/kimsh/.reflexio/.env "$REFLEXIO_DEST/reflexio.env" 2>/dev/null || true
-    ls -1t "$REFLEXIO_DEST"/reflexio-*.db | tail -n +8 | xargs -r rm -f
+    # 보관: 최근 10개 + 그 이전은 14일간 하루 첫 스냅샷 1개씩
+    cutoff=$(date -d '14 days ago' +%F)
+    ls -1 "$REFLEXIO_DEST"/reflexio-*.db 2>/dev/null | sort -r | awk -v cutoff="$cutoff" '
+      { n++; f=$0; d=f; sub(/.*reflexio-/, "", d); d=substr(d,1,10) }
+      n<=10 { next }
+      d>=cutoff && !(d in kept) { kept[d]=1; next }
+      { print f }' | xargs -r rm -f
   else
     echo "warn: reflexio DB 백업 실패 (integrity_check 불통과 또는 backup 오류)"
   fi
