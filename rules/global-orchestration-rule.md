@@ -31,6 +31,18 @@
    - (b) 아키텍처·비가역 결정의 독립 2차 의견 (opus끼리 맹점 공유 회피). 결론 사전 주입 없이 사실·맥락만 전달
 - advisor unavailable 시: 동일 목적 opus 서브에이전트로 대체(생략 금지)
 
+**프로젝트별 게이트 예외 — FA/CUTLASS(CuTe DSL) 트랙(2026-09-26)**: FlashAttention_00·
+CUTLASS_00은 검증생략 조급증 반복 실측(GPU순환논리 양방향 오판, v1 보안설계
+자체검증 누락 — 상세: vault 메모리 `gpu-session-before-code-verification-impulse`).
+이 두 프로젝트에 한해 사다리 4단계(fable)를 다음 2개 게이트에서 **advisor
+호출과 별개로 필수화**:
+  1. **유료 GPU 세션 승인 직전** — 하드웨어 최소사양(디스패치 코드 근거)과
+     비용을 fable이 사실관계만 가지고 독립 재확인.
+  2. **공개 PR 제출 직전** — 특히 보안/allowlist류 설계는 gadget 거부
+     round-trip 테스트 존재 여부를 fable이 확인.
+일상적 코드 읽기·STATE 갱신은 기존대로 main(sonnet) 직접 실행 — 이 두
+게이트 외 fable 상시 위임 아님(구 체계 부활 아님).
+
 ### spawn 표준
 - **model 항상 명시** — 기본 `sonnet`, 격상 시 사다리 단계와 사유 기록. 정의 파일 기본값 의존 금지.
 - `fork`는 main 상속(sonnet) — 컨텍스트 공유가 필요한 병렬 작업엔 사용 가능.
